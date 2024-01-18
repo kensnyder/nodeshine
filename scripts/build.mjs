@@ -9,6 +9,9 @@ const esmResult = await esbuild.build({
   splitting: false,
   sourcemap: false,
   minify: false,
+  define: {
+    'Bun': 'globalThis.Bun',
+  },
   outfile: 'dist/index.mjs',
 });
 
@@ -24,6 +27,9 @@ const cjsResult = await esbuild.build({
   splitting: false,
   sourcemap: false,
   minify: false,
+  define: {
+    'Bun': 'globalThis.Bun',
+  },
   outfile: 'dist/index.js',
 });
 

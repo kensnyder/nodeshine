@@ -1,4 +1,4 @@
-import { HttpRouter, devLogger, performanceHeader } from '../dist/index.mjs';
+const { HttpRouter, devLogger, performanceHeader } = require('../dist/index.js');
 
 const app = new HttpRouter();
 console.log(`${process.cwd()}/src/testFixtures/folder/index.html`);
