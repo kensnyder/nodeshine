@@ -1,40 +1,34 @@
-import type { ServeOptions, Server, WebSocketServeOptions } from 'bun';
+import {
+  TLSWebSocketServeOptions,
+  WebSocketServeOptions,
+  SocketAddress,
+} from 'bun';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import https from 'node:https';
 import {
   createReadableStreamFromReadable,
   writeReadableStreamToWritable,
 } from '../streams/streams';
+import { AllServerOptions, TLSOptions } from '../../types';
 
 export class BunServer<W> {
-  public fetch: (
-    this: Server,
-    request: Request,
-    server: BunServer<W>
-  ) => Response | Promise<Response>;
+  public fetch: AllServerOptions<W>['fetch'];
   public hostname: string;
   public port: number;
   public url: URL;
-  protected _protocol: string;
+  protected _protocol: string = 'http';
   protected _nodeServer: http.Server | https.Server;
-  constructor(options: ServeOptions & WebSocketServeOptions<W>) {
-    if (!options.port) {
-      throw new Error(
-        'Nodeshine requires specifying a port. Use the get-port package if you want a random port.'
-      );
+  constructor(options: AllServerOptions<W>) {
+    // tweak options
+    if (typeof options.port === 'string' && /^\d+$/.test(options.port)) {
+      options.port = Number(options.port);
     }
-    if (typeof options.port !== 'number') {
-      throw new Error('Nodeshine only supports passing a numeric port.');
-    }
-    if (process.versions.bun) {
-      console.warn('Since we are on Bun, please use Bunshine instead of Nodeshine.')
-    }
-    // @ts-expect-error
+    // validate and throw if invalid
+    this._validateOptions(options);
+    // go!
     this.fetch = options.fetch;
     this.hostname = options.hostname || 'localhost';
-    // TODO: support Bun's TlsOptions
-    this._protocol = 'http';
-    this.port = options.port;
+    this.port = typeof options.port === 'number' ? options.port : 3000;
     const serverOpts = {
       // requestTimeout
     };
@@ -58,17 +52,36 @@ export class BunServer<W> {
       `${this._protocol}://${listenOpts.hostname}${maybePort}/`
     );
     if (options.websocket) {
-      // @ts-expect-error
       this._setupWebSockets(options.websocket);
     }
   }
   stop() {
     this.close();
   }
+  /**
+   * Shut down the server
+   */
+  close() {
+    this._nodeServer.close();
+  }
+  /**
+   * Upgrade HTTP request to WebSocket
+   */
   upgrade() {}
+
+  /**
+   * Reload the server
+   */
   reload() {}
+  /**
+   * Publish a message to all connected WebSocket clients
+   */
   publish() {}
-  get requestIP() {
+  /**
+   * The get
+   */
+  requestIP(request: Request) : SocketAddress | null {
+    // TODO: get the requester ip
     return null;
   }
   get pendingRequests() {
@@ -83,16 +96,43 @@ export class BunServer<W> {
   get id() {
     return '';
   }
-
-  /**
-   * Shut down the server
-   */
-  close() {
-    this._nodeServer.close();
+  private _validateOptions(options: AllServerOptions<W>) {
+    if (!options.port) {
+      throw new Error(
+        'Nodeshine requires specifying a port. Use the get-port package if you want a random port.'
+      );
+    }
+    if (typeof options.port !== 'number') {
+      throw new Error('Nodeshine only supports passing a numeric port.');
+    }
+    if (process.versions.bun) {
+      console.warn('Since we are on Bun, please use Bunshine instead of Nodeshine.')
+    }
+    if (options.reusePort) {
+      throw new Error(
+        'Nodeshine is not capable of reusing ports. Bun is required to reuse ports.'
+      );
+    }
+    if (options.unix) {
+      throw new Error('Nodeshine does not support unix sockets.');
+    }
+    if (options.websocket) {
+      throw new Error('Nodeshine: WebSockets are not yet supported.');
+    }
+    if (options.tls) {
+      this._protocol = 'https';
+      this._setupTls(options.tls);
+      throw new Error('Nodeshine: HTTPS is not yet supported.');
+    } else {
+      this._protocol = 'http';
+    }
+    // ignore development, id
+  }
+  _setupTls(options: TLSOptions) {
+    // TODO: implement TLS
   }
 
-  private _setupWebSockets(options: WebSocketServeOptions<W>) {
-    throw new Error('Nodeshine: WebSockets are not yet supported.');
+  private _setupWebSockets(options: WebSocketServeOptions<W> | TLSWebSocketServeOptions<W>) {
     // // server
     // require('net').createServer(function (socket) {
     //   console.log("connected");
@@ -110,9 +150,11 @@ export class BunServer<W> {
    */
   private async _handleRequest(req: IncomingMessage, res: ServerResponse) {
     try {
-      const request = this._convertIncomingMessageToRequest(req);
-      // @ts-expect-error
-      const response = await this.fetch(request, this);
+      // convert close event into an abort signal
+      const onCloseCtrl = new AbortController();
+      res.on('close', () => onCloseCtrl.abort());
+      const request = this._convertIncomingMessageToRequest(req, onCloseCtrl.signal);
+      const response = await this.fetch.call(this, request, this);
       await this._sendResponseAsOutgoingMessage(response, res);
     } catch (e) {
       console.error('Nodeshine error!');
@@ -126,16 +168,14 @@ export class BunServer<W> {
    * @private
    */
   private _convertIncomingMessageToRequest(
-    req: IncomingMessage
+    req: IncomingMessage,
+    signal: AbortSignal
   ) {
-    // convert close event into an abort signal
-    const onCloseCtrl = new AbortController();
-    req.on('close', () => onCloseCtrl.abort());
     const url = new URL(req.url!, `${this._protocol}://${req.headers.host}`);
     const init: RequestInit = {
       method: req.method,
       headers: this._getRequestHeaders(req),
-      signal: onCloseCtrl.signal,
+      signal,
     };
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       init.body = createReadableStreamFromReadable(req);
@@ -191,8 +231,7 @@ export class BunServer<W> {
       // this will call res.end() when the stream is finished
       await writeReadableStreamToWritable(response.body, res);
     } else {
-      console.log('no response body!');
-      // call res.end() ourselves
+      // probably 204 or 3xx
       res.end();
     }
   }

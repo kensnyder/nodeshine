@@ -2,11 +2,11 @@
 
 An HTTP & WebSocket server that is a little ray of sunshine.
 
-<img alt="Nodeshine Logo" src="https://github.com/kensnyder/nodeshine/raw/main/assets/nodeshine-logo.png?v=0.12.8" width="200" height="187" />
+<img alt="Nodeshine Logo" src="https://github.com/kensnyder/nodeshine/raw/main/assets/nodeshine-logo.png?v=0.12.9" width="200" height="187" />
 
-[![NPM Link](https://img.shields.io/npm/v/nodeshine?v=0.12.8)](https://npmjs.com/package/nodeshine)
-![Test Coverage: 94%](https://badgen.net/static/test%20coverage/94%25/green?v=0.12.8)
-[![ISC License](https://img.shields.io/npm/l/nodeshine.svg?v=0.12.8)](https://opensource.org/licenses/ISC)
+[![NPM Link](https://img.shields.io/npm/v/nodeshine?v=0.12.9)](https://npmjs.com/package/nodeshine)
+![Test Coverage: 94%](https://badgen.net/static/test%20coverage/94%25/green?v=0.12.9)
+[![ISC License](https://img.shields.io/npm/l/nodeshine.svg?v=0.12.9)](https://opensource.org/licenses/ISC)
 
 ## Installation
 
@@ -25,8 +25,8 @@ Nodeshine adds compatibility layer under
 Features that come with Bunshine:
 
 1. Use bare `Request` and `Response` objects
-2. Support for routing `WebSocket` requests
-3. Support for Server Sent Events (Coming soon)
+2. Support for routing `WebSocket` requests (Coming soon)
+3. Support for Server Sent Events
 4. Support ranged file downloads (e.g. for video streaming)
 5. Be very lightweight
 6. Treat every handler like middleware
