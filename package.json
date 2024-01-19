@@ -1,6 +1,6 @@
 {
   "name": "nodeshine",
-  "version": "0.12.5",
+  "version": "0.12.6",
   "description": "A compatibility layer to run Bunshine on Node",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -43,7 +43,7 @@
     "vitest": "1.2.1"
   },
   "dependencies": {
-    "bunshine": "0.12.5",
+    "bunshine": "0.12.7",
     "mime": "4.0.1"
   }
 }

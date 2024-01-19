@@ -2,15 +2,18 @@ const {
   HttpRouter,
   devLogger,
   performanceHeader,
+  trailingSlashes,
 } = require('../dist/index.js');
 
 const app = new HttpRouter();
 console.log(`${process.cwd()}/src/testFixtures/folder/index.html`);
 app.use(devLogger());
 app.use(performanceHeader());
+app.use(trailingSlashes('remove'));
 app.onError(c => {
   console.error('Bunshine Error:', c.error);
 });
+app.get('/favicon.ico', c => c.file(`${process.cwd()}/assets/favicon.ico`));
 app.get('/', c => c.text('Hello World'));
 app.get('/bye', c => c.html('<h1>Bye World</h1>'));
 app.get('/json', c => c.json({ hello: 'world' }));
@@ -25,5 +28,5 @@ app.post('/parrot', async c =>
   })
 );
 
-app.listen(3300);
+app.listen({ port: 3300 });
 app.emitUrl({ verbose: true });

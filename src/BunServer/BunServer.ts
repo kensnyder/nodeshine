@@ -1,7 +1,6 @@
 import type { ServeOptions, Server, WebSocketServeOptions } from 'bun';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import https from 'node:https';
-import { BunFile } from '../BunFile/BunFile.ts';
 import {
   createReadableStreamFromReadable,
   writeReadableStreamToWritable,
@@ -108,15 +107,9 @@ export class BunServer<W> {
    */
   private async _handleRequest(req: IncomingMessage, res: ServerResponse) {
     try {
-      const [request, signal] = this._convertIncomingMessageToRequest(req);
-      // get response from handler!
+      const request = this._convertIncomingMessageToRequest(req);
       // @ts-expect-error
       const response = await this.fetch(request, this);
-      // // check if request was aborted
-      if (signal.aborted) {
-        console.log('signal.aborted! but why?');
-        // return this._sendAbortedResponse(res);
-      }
       await this._sendResponseAsOutgoingMessage(response, res);
     } catch (e) {
       console.error('Nodeshine error!');
@@ -126,24 +119,15 @@ export class BunServer<W> {
     }
   }
 
-  // /**
-  //  * @private
-  //  */
-  // private _sendAbortedResponse(res: ServerResponse) {
-  //   console.error('Nodeshine request was aborted. Returning 500.');
-  //   res.statusCode = 500;
-  //   res.end('Internal Server Error', 'utf-8');
-  // }
   /**
    * @private
    */
   private _convertIncomingMessageToRequest(
     req: IncomingMessage
-  ): [Request, AbortSignal] {
+  ) {
     // convert close event into an abort signal
     const onCloseCtrl = new AbortController();
     req.on('close', () => onCloseCtrl.abort());
-    // convert node request to fetch request
     const url = new URL(req.url!, `${this._protocol}://${req.headers.host}`);
     const init: RequestInit = {
       method: req.method,
@@ -155,7 +139,7 @@ export class BunServer<W> {
       // @ts-ignore
       init.duplex = 'half';
     }
-    return [new Request(url.toString(), init), onCloseCtrl.signal];
+    return new Request(url.toString(), init);
   }
 
   /**
@@ -187,8 +171,6 @@ export class BunServer<W> {
     response: Response,
     res: ServerResponse
   ) {
-    // console.log('typeof response.body', typeof response.body);
-    // console.log('response.body', response.body);
     // @ts-ignore
     if (res.setHeaders) {
       // Node >= 18.15
