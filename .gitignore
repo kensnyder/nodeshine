@@ -18,3 +18,7 @@ node_modules/
 
 # build directory
 dist
+!.gitkeep
+
+# Others
+tsconfig.tsbuildinfo

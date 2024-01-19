@@ -1,29 +1,35 @@
-import https from "node:https";
-import http, { type IncomingMessage, type ServerResponse } from "node:http";
+import type { ServeOptions, Server, WebSocketServeOptions } from 'bun';
+import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import https from 'node:https';
+import { BunFile } from '../BunFile/BunFile.ts';
 import {
   createReadableStreamFromReadable,
-  writeReadableStreamToWritable
-} from "../streams/streams";
+  writeReadableStreamToWritable,
+} from '../streams/streams';
 
-type ServeOptions = {
-  fetch: (request: Request, server: BunServer) => Promise<Response>;
-  port: number;
-  hostname?: string;
-}
-
-export class BunServer {
-  public fetch: (request: Request, server: BunServer) => Promise<Response>;
+export class BunServer<W> {
+  public fetch: (
+    this: Server,
+    request: Request,
+    server: BunServer<W>
+  ) => Response | Promise<Response>;
+  public hostname: string;
   public port: number;
   public url: URL;
-  protected _hostname: string;
   protected _protocol: string;
   protected _nodeServer: http.Server | https.Server;
-  constructor(options: ServeOptions) {
+  constructor(options: ServeOptions & WebSocketServeOptions<W>) {
     if (!options.port) {
-      throw new Error('Nodeshine requires specifying a port. Use the get-port package if you want a random port.');
+      throw new Error(
+        'Nodeshine requires specifying a port. Use the get-port package if you want a random port.'
+      );
     }
+    if (typeof options.port !== 'number') {
+      throw new Error('Nodeshine only supports passing a numeric port.');
+    }
+    // @ts-expect-error
     this.fetch = options.fetch;
-    this._hostname = options.hostname || 'localhost';
+    this.hostname = options.hostname || 'localhost';
     // TODO: support Bun's TlsOptions
     this._protocol = 'http';
     this.port = options.port;
@@ -31,7 +37,7 @@ export class BunServer {
       // requestTimeout
     };
     const listenOpts = {
-      hostname: this._hostname,
+      hostname: this.hostname,
       port: this.port,
     };
     const factory = this._protocol === 'https' ? https : http;
@@ -46,7 +52,34 @@ export class BunServer {
       (listenOpts.port === 443 && this._protocol === 'https')
         ? ''
         : `:${listenOpts.port}`;
-    this.url = new URL(`${this._protocol}://${listenOpts.hostname}${maybePort}/`);
+    this.url = new URL(
+      `${this._protocol}://${listenOpts.hostname}${maybePort}/`
+    );
+    if (options.websocket) {
+      // @ts-expect-error
+      this._setupWebSockets(options.websocket);
+    }
+  }
+  stop() {
+    this.close();
+  }
+  upgrade() {}
+  reload() {}
+  publish() {}
+  get requestIP() {
+    return null;
+  }
+  get pendingRequests() {
+    return 0;
+  }
+  get pendingWebSockets() {
+    return 0;
+  }
+  get development() {
+    return process.env.NODE_ENV === 'development';
+  }
+  get id() {
+    return '';
   }
 
   /**
@@ -54,6 +87,19 @@ export class BunServer {
    */
   close() {
     this._nodeServer.close();
+  }
+
+  private _setupWebSockets(options: WebSocketServeOptions<W>) {
+    throw new Error('Nodeshine: WebSockets are not yet supported.');
+    // // server
+    // require('net').createServer(function (socket) {
+    //   console.log("connected");
+    //
+    //   socket.on('data', function (data) {
+    //     console.log(data.toString());
+    //   });
+    // })
+    // .listen(8080);
   }
 
   /**
@@ -64,11 +110,13 @@ export class BunServer {
     try {
       const [request, signal] = this._convertIncomingMessageToRequest(req);
       // get response from handler!
+      // @ts-expect-error
       const response = await this.fetch(request, this);
       // // check if request was aborted
-      // if (signal.aborted) {
-      //   return this._sendAbortedResponse(res);
-      // }
+      if (signal.aborted) {
+        console.log('signal.aborted! but why?');
+        // return this._sendAbortedResponse(res);
+      }
       await this._sendResponseAsOutgoingMessage(response, res);
     } catch (e) {
       console.error('Nodeshine error!');
@@ -78,30 +126,33 @@ export class BunServer {
     }
   }
 
+  // /**
+  //  * @private
+  //  */
+  // private _sendAbortedResponse(res: ServerResponse) {
+  //   console.error('Nodeshine request was aborted. Returning 500.');
+  //   res.statusCode = 500;
+  //   res.end('Internal Server Error', 'utf-8');
+  // }
   /**
    * @private
    */
-  private _sendAbortedResponse(res: ServerResponse) {
-    console.error('Nodeshine request was aborted. Returning 500.');
-    res.statusCode = 500;
-    res.end('Internal Server Error', 'utf-8');
-  }
-  /**
-   * @private
-   */
-  private _convertIncomingMessageToRequest(req: IncomingMessage) : [Request, AbortSignal] {
+  private _convertIncomingMessageToRequest(
+    req: IncomingMessage
+  ): [Request, AbortSignal] {
     // convert close event into an abort signal
     const onCloseCtrl = new AbortController();
     req.on('close', () => onCloseCtrl.abort());
     // convert node request to fetch request
     const url = new URL(req.url!, `${this._protocol}://${req.headers.host}`);
-    const init : RequestInit = {
+    const init: RequestInit = {
       method: req.method,
       headers: this._getRequestHeaders(req),
       signal: onCloseCtrl.signal,
     };
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       init.body = createReadableStreamFromReadable(req);
+      // @ts-ignore
       init.duplex = 'half';
     }
     return [new Request(url.toString(), init), onCloseCtrl.signal];
@@ -132,7 +183,10 @@ export class BunServer {
    * Create and send a response based on a Response object
    * @private
    */
-  private async _sendResponseAsOutgoingMessage(response: Response, res: ServerResponse) {
+  private async _sendResponseAsOutgoingMessage(
+    response: Response,
+    res: ServerResponse
+  ) {
     // console.log('typeof response.body', typeof response.body);
     // console.log('response.body', response.body);
     // @ts-ignore
@@ -152,6 +206,7 @@ export class BunServer {
       // this will call res.end() when the stream is finished
       await writeReadableStreamToWritable(response.body, res);
     } else {
+      console.log('no response body!');
       // call res.end() ourselves
       res.end();
     }

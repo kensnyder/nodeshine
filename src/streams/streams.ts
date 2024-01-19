@@ -1,6 +1,6 @@
 // see https://github.com/remix-run/remix/blob/main/packages/remix-node/stream.ts#L1-L29
-import type { Readable, Writable } from "node:stream";
-import { Stream } from "node:stream";
+import type { Readable, Writable } from 'node:stream';
+import { Stream } from 'node:stream';
 
 export async function writeReadableStreamToWritable(
   stream: ReadableStream,
@@ -19,11 +19,13 @@ export async function writeReadableStreamToWritable(
       }
 
       writable.write(value);
-      if (typeof flushable.flush === "function") {
+
+      if (typeof flushable.flush === 'function') {
         flushable.flush();
       }
     }
   } catch (error: unknown) {
+    console.error('error writing readable stream to writable stream', error);
     writable.destroy(error as Error);
     throw error;
   }
@@ -33,6 +35,7 @@ export const createReadableStreamFromReadable = (
   source: Readable & { readableHighWaterMark?: number }
 ) => {
   let pump = new StreamPump(source);
+  // @ts-expect-error
   let stream = new ReadableStream(pump, pump);
   return stream;
 };
@@ -74,10 +77,10 @@ class StreamPump {
 
   start(controller: ReadableStreamController<Uint8Array>) {
     this.controller = controller;
-    this.stream.on("data", this.enqueue);
-    this.stream.once("error", this.error);
-    this.stream.once("end", this.close);
-    this.stream.once("close", this.close);
+    this.stream.on('data', this.enqueue);
+    this.stream.once('error', this.error);
+    this.stream.once('end', this.close);
+    this.stream.once('close', this.close);
   }
 
   pull() {
@@ -89,10 +92,10 @@ class StreamPump {
       this.stream.destroy(reason);
     }
 
-    this.stream.off("data", this.enqueue);
-    this.stream.off("error", this.error);
-    this.stream.off("end", this.close);
-    this.stream.off("close", this.close);
+    this.stream.off('data', this.enqueue);
+    this.stream.off('error', this.error);
+    this.stream.off('end', this.close);
+    this.stream.off('close', this.close);
   }
 
   enqueue(chunk: Uint8Array | string) {
@@ -108,7 +111,7 @@ class StreamPump {
       } catch (error: any) {
         this.controller.error(
           new Error(
-            "Could not create Buffer, chunk must be of type string or an instance of Buffer, ArrayBuffer, or Array or an Array-like Object"
+            'Could not create Buffer, chunk must be of type string or an instance of Buffer, ArrayBuffer, or Array or an Array-like Object'
           )
         );
         this.cancel();

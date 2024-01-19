@@ -1,4 +1,4 @@
-import * as esbuild from 'esbuild'
+import * as esbuild from 'esbuild';
 
 const esmResult = await esbuild.build({
   entryPoints: ['index.ts'],
@@ -10,12 +10,12 @@ const esmResult = await esbuild.build({
   sourcemap: false,
   minify: false,
   define: {
-    'Bun': 'globalThis.Bun',
+    Bun: 'globalThis.Bun',
   },
   outfile: 'dist/index.mjs',
 });
 
-console.log('---- ESM Build ----')
+console.log('---- ESM Build ----');
 console.log(esmResult);
 
 const cjsResult = await esbuild.build({
@@ -28,10 +28,10 @@ const cjsResult = await esbuild.build({
   sourcemap: false,
   minify: false,
   define: {
-    'Bun': 'globalThis.Bun',
+    Bun: 'globalThis.Bun',
   },
   outfile: 'dist/index.js',
 });
 
-console.log('---- CommonJS Build ----')
+console.log('---- CommonJS Build ----');
 console.log(cjsResult);

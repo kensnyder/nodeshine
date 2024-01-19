@@ -1,6 +1,6 @@
 import { gzipSync } from 'node:zlib';
-import {BunServer} from "./src/BunServer/BunServer.ts";
-import {BunFile} from "./src/BunFile/BunFile.ts";
+import { BunFile } from './src/BunFile/BunFile.ts';
+import { BunServer } from './src/BunServer/BunServer.ts';
 
 globalThis.Bun = {
   env: process.env,

@@ -1,5 +1,6 @@
 import { statSync, type Stats } from 'node:fs';
-import {readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import mime from 'mime';
 
 export class BunFile {
   private readonly _path: string;
@@ -45,46 +46,13 @@ export class BunFile {
    * Get the mime type of the file
    */
   get type() {
-    const ext = this._path.split('.').pop() || '';
-    // TODO: use mimedb or minimime or something that Bun uses
-    return (
-      {
-        css: 'text/css',
-        eot: 'application/vnd.ms-fontobject',
-        gif: 'image/gif',
-        html: 'text/html',
-        ico: 'image/x-icon',
-        jpeg: 'image/jpeg',
-        jpg: 'image/jpeg',
-        js: 'text/javascript',
-        json: 'application/json',
-        otf: 'font/otf',
-        png: 'image/png',
-        svg: 'image/svg+xml',
-        ttf: 'font/ttf',
-        txt: 'text/plain',
-        woff2: 'font/woff2',
-        woff: 'font/woff',
-        xml: 'text/xml',
-      }[ext] || 'application/octet-stream'
-    );
-  }
-  // other functions that facilitate reading the file when passed to a function
-
-  /**
-   * Return the file as a Buffer
-   * @private
-   */
-  async _toBuffer() {
-    console.log('_toBuffer', this._path, this._stats);
-    return readFile(this._path);
+    return mime.getType(this._path) || 'application/octet-stream';
   }
 
   /**
    * Return the file as a Buffer, because that is all bunshine actually needs
    */
   async arrayBuffer() {
-    console.log('arrayBuffer', this._path, this._stats);
     return readFile(this._path);
     // If we really wanted a Uint8Array, we could do this:
     // const buffer = await fs.readFile(this._path);
