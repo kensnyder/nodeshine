@@ -9,7 +9,7 @@
 An HTTP & WebSocket server that is a little ray of sunshine.
 
 ```shell
-npm add nodeshine
+npm install nodeshine
 ```
 
 ## Features
