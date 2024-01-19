@@ -33,7 +33,7 @@ Features you get from Bunshine:
 
 ## Documentation
 
-[Bunshine documentation](https://github.com/kensnyder/nodeshine#readme)
+[Bunshine documentation](https://github.com/kensnyder/bunshine#readme)
 
 ## Basic example
 
@@ -91,7 +91,7 @@ function authorize(authHeader: string) {
 }
 ```
 
-[Full bunshine documentation](https://github.com/kensnyder/nodeshine#readme)
+[Full bunshine documentation](https://github.com/kensnyder/bunshine#readme)
 
 ## Roadmap
 
