@@ -1,27 +1,32 @@
-<img alt="Nodeshine Logo" src="https://github.com/kensnyder/nodeshine/raw/main/assets/nodeshine-logo.png?v=0.12.6" width="200" height="187" />
-
-[![NPM Link](https://img.shields.io/npm/v/nodeshine?v=0.12.6)](https://npmjs.com/package/nodeshine)
-![Test Coverage: 94%](https://badgen.net/static/test%20coverage/94%25/green?v=0.12.6)
-[![ISC License](https://img.shields.io/npm/l/nodeshine.svg?v=0.12.6)](https://opensource.org/licenses/ISC)
-
 # Nodeshine
 
 An HTTP & WebSocket server that is a little ray of sunshine.
+
+<img alt="Nodeshine Logo" src="https://github.com/kensnyder/nodeshine/raw/main/assets/nodeshine-logo.png?v=0.12.8" width="200" height="187" />
+
+[![NPM Link](https://img.shields.io/npm/v/nodeshine?v=0.12.8)](https://npmjs.com/package/nodeshine)
+![Test Coverage: 94%](https://badgen.net/static/test%20coverage/94%25/green?v=0.12.8)
+[![ISC License](https://img.shields.io/npm/l/nodeshine.svg?v=0.12.8)](https://opensource.org/licenses/ISC)
+
+## Installation
 
 ```shell
 npm install nodeshine
 ```
 
+_Or on Bun, you can
+[use Bunshine directly](https://npmjs.com/package/bunshine)._
+
 ## Features
 
-Nodeshine adds compatibility layer on top of
-[Bunshine](https://npmjs.com/package/bunshine).
+Nodeshine adds compatibility layer under
+[Bunshine](https://npmjs.com/package/bunshine) so that it can run on Node.
 
-Features you get from Bunshine:
+Features that come with Bunshine:
 
 1. Use bare `Request` and `Response` objects
 2. Support for routing `WebSocket` requests
-3. Support for Server Sent Events
+3. Support for Server Sent Events (Coming soon)
 4. Support ranged file downloads (e.g. for video streaming)
 5. Be very lightweight
 6. Treat every handler like middleware

@@ -1,0 +1,15 @@
+# not for NPM
+assets
+.prettierrc.json
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea
+.vscode
+
+# Others
+.eslintcache
+.gitkeep
+tsconfig.tsbuildinfo

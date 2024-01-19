@@ -26,6 +26,9 @@ export class BunServer<W> {
     if (typeof options.port !== 'number') {
       throw new Error('Nodeshine only supports passing a numeric port.');
     }
+    if (process.versions.bun) {
+      console.warn('Since we are on Bun, please use Bunshine instead of Nodeshine.')
+    }
     // @ts-expect-error
     this.fetch = options.fetch;
     this.hostname = options.hostname || 'localhost';
