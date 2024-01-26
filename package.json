@@ -4,6 +4,7 @@
   "description": "A compatibility layer to run Bunshine on Node",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
+  "types": "index.d.ts",
   "exports": {
     ".": {
       "require": "./dist/index.js",
@@ -14,7 +15,7 @@
     "test": "npm run build && vitest run",
     "coverage": "npm run build && vitest run --coverage",
     "build": "node scripts/build.mjs",
-    "generate-dts": "rm index.d.ts; bunx dts-bundle-generator -o index.d.ts index.ts",
+    "generate-dts": "cp ./node_modules/bunshine/index.d.ts ./index.d.ts",
     "lint": "tsc"
   },
   "repository": {
@@ -33,9 +34,9 @@
   },
   "homepage": "https://github.com/kensnyder/nodeshine#readme",
   "devDependencies": {
-    "@types/bun": "1.0.3",
     "@types/node": "20.11.5",
     "@vitest/coverage-v8": "1.2.1",
+    "bun-types": "1.0.25",
     "esbuild": "0.19.11",
     "eventsource": "2.0.2",
     "prettier": "3.2.4",
@@ -45,7 +46,7 @@
     "vitest": "1.2.1"
   },
   "dependencies": {
-    "bunshine": "0.13.0",
+    "bunshine": "0.13.1",
     "mime": "4.0.1"
   }
 }
