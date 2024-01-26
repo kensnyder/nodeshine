@@ -1,37 +1,44 @@
 import {
+  SocketAddress,
   TLSWebSocketServeOptions,
   WebSocketServeOptions,
-  SocketAddress,
 } from 'bun';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import https from 'node:https';
+import { type TLSSocketOptions as NodeTLSOptions } from 'node:tls';
+import { AllServerOptions, TLSFile, TLSOptions } from '../../types';
+import { BunFile } from '../BunFile/BunFile.ts';
 import {
   createReadableStreamFromReadable,
   writeReadableStreamToWritable,
 } from '../streams/streams';
-import { AllServerOptions, TLSOptions } from '../../types';
 
 export class BunServer<W> {
   public fetch: AllServerOptions<W>['fetch'];
   public hostname: string;
   public port: number;
   public url: URL;
+  protected _reqMap: WeakMap<Request, IncomingMessage>;
   protected _protocol: string = 'http';
   protected _nodeServer: http.Server | https.Server;
+  protected _pendingReqCount: number = 0;
   constructor(options: AllServerOptions<W>) {
+    const serverOpts = {
+      // requestTimeout
+    };
     // tweak options
     if (typeof options.port === 'string' && /^\d+$/.test(options.port)) {
       options.port = Number(options.port);
     }
+    this._configureSsl(options, serverOpts);
     // validate and throw if invalid
     this._validateOptions(options);
     // go!
     this.fetch = options.fetch;
     this.hostname = options.hostname || 'localhost';
     this.port = typeof options.port === 'number' ? options.port : 3000;
-    const serverOpts = {
-      // requestTimeout
-    };
+    this._reqMap = new WeakMap();
+    this._configureSsl(options, serverOpts);
     const listenOpts = {
       hostname: this.hostname,
       port: this.port,
@@ -42,6 +49,12 @@ export class BunServer<W> {
       serverOpts,
       this._handleRequest.bind(this)
     );
+    if (options.tls?.serverNames) {
+      for (const [hostname, opts] of Object.entries(options.tls.serverNames)) {
+        // @ts-ignore
+        this._nodeServer.addContext(hostname, opts);
+      }
+    }
     this._nodeServer.listen(listenOpts);
     const maybePort =
       (listenOpts.port === 80 && this._protocol === 'http') ||
@@ -51,6 +64,7 @@ export class BunServer<W> {
     this.url = new URL(
       `${this._protocol}://${listenOpts.hostname}${maybePort}/`
     );
+    // I don't think this will work.
     if (options.websocket) {
       this._setupWebSockets(options.websocket);
     }
@@ -72,20 +86,61 @@ export class BunServer<W> {
   /**
    * Reload the server
    */
-  reload() {}
+  reload() {
+    throw new Error('Nodeshine does not support reloading the server.');
+  }
   /**
    * Publish a message to all connected WebSocket clients
    */
-  publish() {}
+  publish() {
+    throw new Error('Nodeshine does not support publishing to websockets.');
+  }
   /**
-   * The get
+   * Function to get the IP address of the client based on a Request object
+   * @see https://dev.to/sureshramani/how-to-get-the-ip-address-of-a-client-in-nodejs-3dj6
    */
-  requestIP(request: Request) : SocketAddress | null {
-    // TODO: get the requester ip
-    return null;
+  requestIP(request: Request): SocketAddress | null {
+    const list = [
+      'x-client-ip',
+      'x-forwarded-for',
+      'cf-connecting-ip',
+      'fastly-client-ip',
+      'true-client-ip',
+      'x-real-ip',
+      'x-cluster-client-ip',
+      'x-forwarded',
+      'x-forwarded-for',
+      'forwarded',
+    ];
+    const req = this._reqMap.get(request);
+    for (const header of list) {
+      const ip = request.headers.get(header);
+      if (ip) {
+        return {
+          address: ip,
+          family: this._getIpFamily(ip),
+          port: req?.socket.remotePort || 0,
+        };
+      }
+    }
+    if (!req) {
+      return null;
+    }
+    const ip = req.socket.remoteAddress;
+    if (!ip) {
+      return null;
+    }
+    return {
+      address: ip,
+      family: this._getIpFamily(ip),
+      port: req.socket.remotePort || 0,
+    };
+  }
+  _getIpFamily(ip: string) {
+    return /^[0-9.]+$/.test(ip) ? 'IPv4' : 'IPv6';
   }
   get pendingRequests() {
-    return 0;
+    return this._pendingReqCount;
   }
   get pendingWebSockets() {
     return 0;
@@ -106,7 +161,9 @@ export class BunServer<W> {
       throw new Error('Nodeshine only supports passing a numeric port.');
     }
     if (process.versions.bun) {
-      console.warn('Since we are on Bun, please use Bunshine instead of Nodeshine.')
+      console.warn(
+        'Since we are on Bun, please use Bunshine instead of Nodeshine.'
+      );
     }
     if (options.reusePort) {
       throw new Error(
@@ -119,20 +176,63 @@ export class BunServer<W> {
     if (options.websocket) {
       throw new Error('Nodeshine: WebSockets are not yet supported.');
     }
-    if (options.tls) {
-      this._protocol = 'https';
-      this._setupTls(options.tls);
-      throw new Error('Nodeshine: HTTPS is not yet supported.');
-    } else {
-      this._protocol = 'http';
-    }
     // ignore development, id
   }
-  _setupTls(options: TLSOptions) {
+  private _configureSsl(
+    options: AllServerOptions<W>,
+    serverOptions: NodeTLSOptions
+  ) {
+    if (options.tls) {
+      this._protocol = 'https';
+    } else {
+      this._protocol = 'http';
+      return;
+    }
+    const fileIsh = ['ca', 'cert', 'key', 'passphrase'];
+    for (const prop of fileIsh) {
+      if (fileIsh[prop]) {
+        serverOptions[prop] = this._getBuffer(options.tls[prop]);
+      }
+    }
+    if (options.tls.dhParamsFile) {
+      serverOptions.dhparam = this._getBuffer(options.tls.dhParamsFile);
+    }
+    const scalar = ['secureOptions'];
+    for (const prop of scalar) {
+      if (scalar[prop] !== undefined) {
+        serverOptions[prop] = options.tls[prop];
+      }
+    }
+    if (options.tls.serverName) {
+      // @ts-ignore
+      serverOptions.servername = options.tls.serverName;
+    }
+    // ignore serverNames since node has no option for it
+    // or maybe they do under server.addContext(hostname, context
+  }
+
+  private _getBuffer(file: TLSFile) {
+    if (Array.isArray(file)) {
+      return file.map(f => this._getBuffer(f));
+    }
+    if (file instanceof Buffer) {
+      return file;
+    }
+    if (typeof file === 'string') {
+      file = new BunFile(file);
+    }
+    if (file instanceof BunFile) {
+      return file.arrayBuffer();
+    }
+  }
+
+  private _validateTls(options: TLSOptions) {
     // TODO: implement TLS
   }
 
-  private _setupWebSockets(options: WebSocketServeOptions<W> | TLSWebSocketServeOptions<W>) {
+  private _setupWebSockets(
+    options: WebSocketServeOptions<W> | TLSWebSocketServeOptions<W>
+  ) {
     // // server
     // require('net').createServer(function (socket) {
     //   console.log("connected");
@@ -153,15 +253,22 @@ export class BunServer<W> {
       // convert close event into an abort signal
       const onCloseCtrl = new AbortController();
       res.on('close', () => onCloseCtrl.abort());
-      const request = this._convertIncomingMessageToRequest(req, onCloseCtrl.signal);
+      const request = this._convertIncomingMessageToRequest(
+        req,
+        onCloseCtrl.signal
+      );
+      this._reqMap.set(request, req);
+      this._pendingReqCount++;
       const response = await this.fetch.call(this, request, this);
       await this._sendResponseAsOutgoingMessage(response, res);
+      this._reqMap.delete(request);
     } catch (e) {
       console.error('Nodeshine error!');
       console.error(e);
       res.statusCode = 500;
       res.end('Internal Server Error', 'utf-8');
     }
+    this._pendingReqCount--;
   }
 
   /**
@@ -214,16 +321,8 @@ export class BunServer<W> {
     response: Response,
     res: ServerResponse
   ) {
-    // @ts-ignore
-    if (res.setHeaders) {
-      // Node >= 18.15
-      // @ts-ignore
-      res.setHeaders(response.headers);
-    } else {
-      // Node < 18.15
-      for (const [name, value] of Object.entries(response.headers)) {
-        res.appendHeader(name, value);
-      }
+    for (const [name, value] of response.headers) {
+      res.appendHeader(name, value);
     }
     res.statusCode = response.status;
     res.statusMessage = response.statusText;

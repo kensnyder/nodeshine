@@ -12,9 +12,9 @@
   },
   "scripts": {
     "test": "npm run build && vitest run",
-    "watch": "npm run build && vitest",
     "coverage": "npm run build && vitest run --coverage",
     "build": "node scripts/build.mjs",
+    "generate-dts": "rm index.d.ts; bunx dts-bundle-generator -o index.d.ts index.ts",
     "lint": "tsc"
   },
   "repository": {
@@ -33,10 +33,11 @@
   },
   "homepage": "https://github.com/kensnyder/nodeshine#readme",
   "devDependencies": {
-    "@types/bun": "1.0.2",
+    "@types/bun": "1.0.3",
     "@types/node": "20.11.5",
     "@vitest/coverage-v8": "1.2.1",
     "esbuild": "0.19.11",
+    "eventsource": "2.0.2",
     "prettier": "3.2.4",
     "prettier-plugin-organize-imports": "3.2.4",
     "type-fest": "4.9.0",
@@ -44,7 +45,7 @@
     "vitest": "1.2.1"
   },
   "dependencies": {
-    "bunshine": "0.12.8",
+    "bunshine": "0.13.0",
     "mime": "4.0.1"
   }
 }

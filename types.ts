@@ -1,9 +1,6 @@
-import {
-  TLSWebSocketServeOptions,
-  WebSocketServeOptions,
-} from 'bun';
-import type { BunServer } from './src/BunServer/BunServer';
+import { TLSWebSocketServeOptions, WebSocketServeOptions } from 'bun';
 import type { BunFile } from './src/BunFile/BunFile';
+import type { BunServer } from './src/BunServer/BunServer';
 
 export type AllServerOptions<W> = {
   hostname?: string;
@@ -17,7 +14,14 @@ export type AllServerOptions<W> = {
   ) => Response | Promise<Response>;
   reusePort?: boolean;
   unix?: string;
-}
+};
+
+export type TLSFile =
+  | string
+  | Buffer
+  | BunFile
+  | Array<string | Buffer | BunFile>
+  | undefined;
 
 export type TLSOptions = {
   /**
@@ -27,7 +31,7 @@ export type TLSOptions = {
   /**
    * File path to a .pem file custom Diffie Helman parameters
    */
-  dhParamsFile?: string;
+  dhParamsFile?: TLSFile;
   /**
    * Explicitly set a server name
    */
@@ -43,12 +47,7 @@ export type TLSOptions = {
    * the well-known CAs curated by Mozilla. Mozilla's CAs are completely
    * replaced when CAs are explicitly specified using this option.
    */
-  ca?:
-    | string
-    | Buffer
-    | BunFile
-    | Array<string | Buffer | BunFile>
-    | undefined;
+  ca?: TLSFile;
   /**
    *  Cert chains in PEM format. One cert chain should be provided per
    *  private key. Each cert chain should consist of the PEM formatted
@@ -60,12 +59,7 @@ export type TLSOptions = {
    *  intermediate certificates are not provided, the peer will not be
    *  able to validate the certificate, and the handshake will fail.
    */
-  cert?:
-    | string
-    | Buffer
-    | BunFile
-    | Array<string | Buffer | BunFile>
-    | undefined;
+  cert?: TLSFile;
   /**
    * Private keys in PEM format. PEM allows the option of private keys
    * being encrypted. Encrypted keys will be decrypted with
@@ -76,12 +70,7 @@ export type TLSOptions = {
    * object.passphrase is optional. Encrypted keys will be decrypted with
    * object.passphrase if provided, or options.passphrase if it is not.
    */
-  key?:
-    | string
-    | Buffer
-    | BunFile
-    | Array<string | Buffer | BunFile>
-    | undefined;
+  key?: TLSFile;
   /**
    * Optionally affect the OpenSSL protocol behavior, which is not
    * usually necessary. This should be used carefully if at all! Value is
@@ -93,4 +82,4 @@ export type TLSOptions = {
    *  The values are SSL options objects.
    */
   serverNames?: Record<string, TLSOptions>;
-}
+};

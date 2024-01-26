@@ -1,10 +1,12 @@
+import mime from 'mime/lite';
 import { statSync, type Stats } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import mime from 'mime';
+
+const missingFile = { size: 0, mtimeMs: undefined };
 
 export class BunFile {
   private readonly _path: string;
-  private _stats: Stats | null = null;
+  private _stats: Stats | typeof missingFile | null = null;
   /**
    * @param {string} path  The path to the file
    */
@@ -16,30 +18,21 @@ export class BunFile {
    * Check if this file exists
    */
   async exists() {
-    if (!this._stats) {
-      this._stats = statSync(this._path);
-    }
-    return Boolean(this._stats);
+    return this._getStats().mtimeMs !== undefined;
   }
 
   /**
    * Get last modified time in milliseconds
    */
   get lastModified() {
-    if (!this._stats) {
-      this._stats = statSync(this._path) || { ghost: true };
-    }
-    return this._stats.mtimeMs;
+    return this._getStats().mtimeMs;
   }
 
   /**
    * Get the size of the file in bytes
    */
   get size() {
-    if (!this._stats) {
-      this._stats = statSync(this._path) || { ghost: true };
-    }
-    return this._stats.size;
+    return this._getStats().size;
   }
 
   /**
@@ -53,9 +46,23 @@ export class BunFile {
    * Return the file as a Buffer, because that is all bunshine actually needs
    */
   async arrayBuffer() {
+    if (this._getStats().mtimeMs === undefined) {
+      return null;
+    }
     return readFile(this._path);
     // If we really wanted a Uint8Array, we could do this:
     // const buffer = await fs.readFile(this._path);
     // return new Uint8Array(buffer);
+  }
+
+  private _getStats() {
+    if (!this._stats) {
+      try {
+        this._stats = statSync(this._path);
+      } catch (e) {
+        this._stats = missingFile;
+      }
+    }
+    return this._stats;
   }
 }

@@ -100,9 +100,10 @@ function authorize(authHeader: string) {
 
 ## Roadmap
 
-- 🔲 Support for Bunshine's socket handling
 - 🔲 Support for HTTPS
+- 🔲 Support for Bunshine's socket handling
 - 🔲 Support Bunshine's bin/serve.ts
+- ✅ Get requester ip
 
 ## License
 
