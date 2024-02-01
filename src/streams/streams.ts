@@ -6,6 +6,11 @@ export async function writeReadableStreamToWritable(
   stream: ReadableStream,
   writable: Writable
 ) {
+  // this section is needed for some file responses
+  if (!stream.getReader && typeof stream.read === 'function') {
+    writable.write(stream.read());
+    return;
+  }
   let reader = stream.getReader();
   let flushable = writable as { flush?: Function };
 
