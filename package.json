@@ -1,6 +1,6 @@
 {
   "name": "nodeshine",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "description": "A compatibility layer to run Bunshine on Node",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -34,19 +34,19 @@
   },
   "homepage": "https://github.com/kensnyder/nodeshine#readme",
   "devDependencies": {
-    "@types/node": "20.11.5",
-    "@vitest/coverage-v8": "1.2.1",
-    "bun-types": "1.0.25",
-    "esbuild": "0.19.11",
+    "@types/node": "20.11.30",
+    "@vitest/coverage-v8": "1.4.0",
+    "bun-types": "1.0.35",
+    "esbuild": "0.20.2",
     "eventsource": "2.0.2",
-    "prettier": "3.2.4",
+    "prettier": "3.2.5",
     "prettier-plugin-organize-imports": "3.2.4",
-    "type-fest": "4.9.0",
-    "typescript": "5.3.3",
-    "vitest": "1.2.1"
+    "type-fest": "4.14.0",
+    "typescript": "5.4.3",
+    "vitest": "1.4.0"
   },
   "dependencies": {
-    "bunshine": "0.14.1",
+    "bunshine": "0.14.2",
     "mime": "4.0.1"
   }
 }
