@@ -34,19 +34,19 @@
   },
   "homepage": "https://github.com/kensnyder/nodeshine#readme",
   "devDependencies": {
-    "@types/node": "20.11.30",
-    "@vitest/coverage-v8": "1.4.0",
-    "bun-types": "1.0.35",
+    "@types/node": "20.12.7",
+    "@vitest/coverage-v8": "1.5.0",
+    "bun-types": "1.1.4",
     "esbuild": "0.20.2",
     "eventsource": "2.0.2",
     "prettier": "3.2.5",
     "prettier-plugin-organize-imports": "3.2.4",
-    "type-fest": "4.14.0",
-    "typescript": "5.4.3",
-    "vitest": "1.4.0"
+    "type-fest": "4.15.0",
+    "typescript": "5.4.5",
+    "vitest": "1.5.0"
   },
   "dependencies": {
-    "bunshine": "0.14.2",
+    "bunshine": "1.0.0",
     "mime": "4.0.1"
   }
 }
