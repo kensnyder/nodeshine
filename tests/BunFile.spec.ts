@@ -40,6 +40,7 @@ describe('serveFiles middleware', () => {
     app.get(
       '/files/*',
       serveFiles(`${fixturesPath}/toGzip`, {
+        // @ts-expect-error
         gzip: {
           minFileSize: 0,
           maxFileSize: 100000,

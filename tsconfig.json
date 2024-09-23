@@ -1,4 +1,5 @@
 {
+  "include:": ["src/**/*.ts"],
   "compilerOptions": {
     "lib": ["ESNext", "dom", "dom.iterable"],
     "module": "esnext",

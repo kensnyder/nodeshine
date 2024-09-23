@@ -7,7 +7,9 @@ export async function writeReadableStreamToWritable(
   writable: Writable
 ) {
   // this section is needed for some file responses
+  // @ts-expect-error
   if (!stream.getReader && typeof stream.read === 'function') {
+    // @ts-expect-error
     writable.write(stream.read());
     return;
   }
