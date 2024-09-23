@@ -11,6 +11,12 @@
       "import": "./dist/index.mjs"
     }
   },
+  "files": [
+    "dist",
+    "index.d.ts",
+    "README.md",
+    "LICENSE.md"
+  ],
   "scripts": {
     "test": "npm run build && vitest run",
     "coverage": "npm run build && vitest run --coverage",
